@@ -1,0 +1,12 @@
+package main
+
+const (
+	KEY_POW_COMPLEXITY      = 2
+	TEST_KEY_POW_COMPLEXITY = 1
+
+	BLOCK_POW_COMPLEXITY      = 2
+	TEST_BLOCK_POW_COMPLEXITY = 1
+
+	POW_PREFIX      = 0
+	TEST_POW_PREFIX = 'i'
+)
