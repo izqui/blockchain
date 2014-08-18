@@ -11,14 +11,6 @@ const (
 	TRANSACTION_COMPLEXITY = 2
 )
 
-type Transaction struct {
-	From      string
-	To        string
-	Data      string
-	Timestamp int64
-	Tries     int // nonce
-}
-
 func (t *Transaction) Init() []byte {
 
 	prefix := helpers.ArrayOfBytes(TRANSACTION_COMPLEXITY, 0) // [0 0]
