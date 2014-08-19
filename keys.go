@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
 	"reflect"
 
 	"crypto/ecdsa"
@@ -42,7 +42,7 @@ func GenerateNewKeypair(prefix byte, complexity int) Keypair {
 		kp = randomKeyPair()
 
 		//Proof of work
-		if reflect.DeepEqual(kp.Public[:complexity], pr) {
+		if complexity == 0 || reflect.DeepEqual(kp.Public[:complexity], pr) {
 			break
 		}
 	}
@@ -83,12 +83,11 @@ func Verify(publicKey []byte, sig, data []byte) bool {
 	keyLength := len(publicKey) / 2
 	x, err := base58.DecodeToBig(publicKey[:keyLength])
 	if err != nil {
-		fmt.Println(err)
+
 		return false
 	}
 	y, err := base58.DecodeToBig(publicKey[keyLength:])
 	if err != nil {
-		fmt.Println(err)
 
 		return false
 	}
@@ -97,13 +96,11 @@ func Verify(publicKey []byte, sig, data []byte) bool {
 
 	r, err := base58.DecodeToBig(sig[:sigLength])
 	if err != nil {
-		fmt.Println(err)
 
 		return false
 	}
 	s, err := base58.DecodeToBig(sig[sigLength:])
 	if err != nil {
-		fmt.Println(err)
 
 		return false
 	}

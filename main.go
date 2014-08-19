@@ -6,6 +6,6 @@ import (
 
 func main() {
 
-	keypair := GenerateNewKeypair(POW_PREFIX, 1)
+	keypair := GenerateNewKeypair(POW_PREFIX, KEY_POW_COMPLEXITY)
 	fmt.Println(string(keypair.Public))
 }
