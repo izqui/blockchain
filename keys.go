@@ -15,8 +15,8 @@ import (
 
 // Key generation with proof of work
 type Keypair struct {
-	Public  []byte //x (base58 encoded) + y (base58 encoded)
-	Private []byte //d (base58 encoded)
+	Public  []byte `json:"public"`  //x (base58 encoded) + y (base58 encoded)
+	Private []byte `json:"private"` //d (base58 encoded)
 }
 
 func randomKeyPair() Keypair {
@@ -31,7 +31,7 @@ func randomKeyPair() Keypair {
 	return kp
 }
 
-func GenerateNewKeypair(prefix byte, complexity int) Keypair {
+func GenerateNewKeypair(prefix byte, complexity int) *Keypair {
 
 	pr := helpers.ArrayOfBytes(complexity, prefix)
 
@@ -46,10 +46,10 @@ func GenerateNewKeypair(prefix byte, complexity int) Keypair {
 			break
 		}
 	}
-	return kp
+	return &kp
 }
 
-func (k Keypair) Sign(data []byte) ([]byte, error) {
+func (k *Keypair) Sign(data []byte) ([]byte, error) {
 
 	hash := helpers.SHA256(data)
 	d, err := base58.DecodeToBig(k.Private)
