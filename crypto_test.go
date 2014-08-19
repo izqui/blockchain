@@ -20,10 +20,9 @@ func TestKeyGeneration(t *testing.T) {
 func TestKeySigning(t *testing.T) {
 
 	for i := 0; i < 5000; i++ {
-		fmt.Println("----")
 		keypair := GenerateNewKeypair(TEST_POW_PREFIX, TEST_KEY_POW_COMPLEXITY)
 
-		data := helpers.ArrayOfBytes(512, 'a')
+		data := helpers.ArrayOfBytes(i, i)
 		signature, err := keypair.Sign(data)
 
 		if err != nil {
@@ -32,7 +31,6 @@ func TestKeySigning(t *testing.T) {
 
 		} else if !Verify(keypair.Public, signature, data) {
 
-			fmt.Println("FAIL")
 			t.Error("Signing and verifying error", len(keypair.Public))
 		}
 	}

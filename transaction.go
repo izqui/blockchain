@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"github.com/izqui/helpers"
 	"time"
 )
 
@@ -8,8 +10,8 @@ type TransactionSlice []Transaction
 
 type Transaction struct {
 	Header    TransactionHeader
-	Payload   []byte
 	Signature []byte
+	Payload   []byte
 }
 
 type TransactionHeader struct {
@@ -35,11 +37,16 @@ func (t Transaction) Sign(keypair Keypair) Transaction {
 func (t *Transaction) MarshalBinary() ([]byte, error) {
 
 	headerBytes, _ := t.Header.MarshalBinary()
-	return (append(append(headerBytes, t.Payload...), t.Signature...)), nil
+
+	if len(headerBytes) != HEADER_SIZE {
+		return nil, errors.New("Header marshalling error")
+	}
+
+	return append(append(headerBytes, helpers.FitBytesInto(t.Signature, NETWORK_KEY_SIZE)...), t.Payload...), nil
 }
 
-func (t *Transaction) UnmarshalBinary() []byte {
-	return []byte{}
+func (t *Transaction) UnmarshalBinary([]byte) {
+
 }
 
 func (th TransactionHeader) MarshalBinary() ([]byte, error) {
@@ -47,6 +54,6 @@ func (th TransactionHeader) MarshalBinary() ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (th TransactionHeader) UnmarshalBinary() []byte {
-	return []byte{}
+func (th TransactionHeader) UnmarshalBinary([]byte) {
+
 }

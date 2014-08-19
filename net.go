@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 //const SEED_NODES = []string{"10.0.5.33"}
@@ -16,30 +17,75 @@ type BlockchainNode struct {
 
 var nodes []BlockchainNode
 
-func StartListening(address string, port string) {
+func StartListening(address string) chan *BlockchainNode {
 
-	addr, err := net.ResolveTCPAddr("tcp6", address)
+	cb := make(chan *BlockchainNode)
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", address, BLOCKCHAIN_PORT))
 	networkError(err)
 
-	_, err = net.ListenTCP("tcp6", addr)
+	listener, err := net.ListenTCP("tcp", addr)
 	networkError(err)
+
+	go func(l *net.TCPListener) {
+
+		for {
+			connection, err := l.AcceptTCP()
+			networkError(err)
+
+			cb <- &BlockchainNode{connection, int(time.Now().Unix())}
+		}
+
+	}(listener)
+
+	return cb
 }
 
-func GetIpAddress() {
+func ConnectToNode(dst string, retry bool) chan *BlockchainNode {
+
+	cb := make(chan *BlockchainNode)
+
+	addrDst, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", dst, BLOCKCHAIN_PORT))
+	networkError(err)
+
+	go func() {
+		var con *net.TCPConn = nil
+		for {
+
+			con, err = net.DialTCP("tcp", nil, addrDst)
+			networkError(err)
+
+			if !retry {
+				break
+			}
+
+			if con != nil {
+				cb <- &BlockchainNode{con, int(time.Now().Unix())}
+				break
+			} else {
+				time.Sleep(5 * time.Second)
+			}
+		}
+
+	}()
+
+	return cb
+}
+
+func GetIpAddress() []string {
 
 	name, err := os.Hostname()
 	if err != nil {
-		fmt.Printf("Oops: %v\n", err)
-		return
+
+		return nil
 	}
 
 	addrs, err := net.LookupHost(name)
 	if err != nil {
-		fmt.Printf("Oops: %v\n", err)
-		return
+
+		return nil
 	}
 
-	fmt.Println(addrs[0])
+	return addrs
 }
 
 func networkError(err error) {
