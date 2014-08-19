@@ -5,4 +5,5 @@ ADD . /gopath/src/blockchain
 RUN go get blockchain
 
 CMD []
-ENTRYPOINT ["/gopath/bin/blockchain"]
+EXPOSE 9119
+ENTRYPOINT blockchain

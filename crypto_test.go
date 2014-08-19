@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"github.com/izqui/helpers"
 	"reflect"
 	"testing"
-
-	"github.com/izqui/helpers"
 )
 
 func TestKeyGeneration(t *testing.T) {
@@ -19,17 +19,22 @@ func TestKeyGeneration(t *testing.T) {
 
 func TestKeySigning(t *testing.T) {
 
-	keypair := GenerateNewKeypair(TEST_POW_PREFIX, TEST_KEY_POW_COMPLEXITY)
+	for i := 0; i < 5000; i++ {
+		fmt.Println("----")
+		keypair := GenerateNewKeypair(TEST_POW_PREFIX, TEST_KEY_POW_COMPLEXITY)
 
-	data := helpers.ArrayOfBytes(1024, 'a')
-	signature, err := keypair.Sign(data)
+		data := helpers.ArrayOfBytes(512, 'a')
+		signature, err := keypair.Sign(data)
 
-	if err != nil {
+		if err != nil {
 
-		t.Error("base58 error")
+			t.Error("base58 error")
 
-	} else if !Verify(keypair.Public, signature, data) {
+		} else if !Verify(keypair.Public, signature, data) {
 
-		t.Error("Signing and verifying error")
+			fmt.Println("FAIL")
+			t.Error("Signing and verifying error", len(keypair.Public))
+		}
 	}
+
 }
