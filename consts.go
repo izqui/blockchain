@@ -2,7 +2,7 @@ package main
 
 const (
 	BLOCKCHAIN_PORT      = "9119"
-	MAX_NODE_CONNECTIONS = 1000
+	MAX_NODE_CONNECTIONS = 400
 
 	NETWORK_KEY_SIZE = 80
 
@@ -22,3 +22,9 @@ const (
 	POW_PREFIX      = 0
 	TEST_POW_PREFIX = 0
 )
+
+var SEED_NODES = [...]string{
+	"10.0.5.33",
+	"10.0.1.22",
+	"10.1.2.2",
+}

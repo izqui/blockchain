@@ -5,10 +5,21 @@ import (
 	"fmt"
 	_ "github.com/izqui/helpers"
 	"log"
+	"time"
 )
 
 var (
+
+	//flag
 	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
+
+	self = struct {
+		*Keypair
+		*Blockchain
+		NodeSlice
+		ConnectionsQueue
+		Address *string
+	}{nil, nil, nil, nil, address}
 )
 
 func init() {
@@ -25,19 +36,14 @@ func main() {
 		WriteConfiguration(HOME_DIRECTORY_CONFIG, keypair)
 	}
 
-	listenCb := StartListening(*address)
-	fmt.Println("Listening in", *address, BLOCKCHAIN_PORT)
+	self.Keypair = keypair
 
-	connectCb := ConnectToNode(*address, true)
-	for {
-		select {
-		case node := <-listenCb:
-			fmt.Println("New connection from", node.TCPConn.RemoteAddr())
-		case node := <-connectCb:
-			fmt.Println("Connected to", node.TCPConn.RemoteAddr())
-		}
+	go RunBlockchainNetwork()
 
-	}
+	time.Sleep(time.Second)
+	self.ConnectionsQueue <- SEED_NODES[0]
+	time.Sleep(time.Second * 1000)
+
 }
 
 func logOnError(err error) {

@@ -8,18 +8,54 @@ import (
 	"time"
 )
 
-//const SEED_NODES = []string{"10.0.5.33"}
-
-type BlockchainNode struct {
+type ConnectionsQueue chan string
+type NodeChannel chan *Node
+type Node struct {
 	*net.TCPConn
 	lastSeen int
 }
 
-var nodes []BlockchainNode
+type NodeSlice []*Node
 
-func StartListening(address string) chan *BlockchainNode {
+func RunBlockchainNetwork() {
 
-	cb := make(chan *BlockchainNode)
+	listenCb := StartListening(*self.Address)
+
+	fmt.Println("Listening in", *self.Address, BLOCKCHAIN_PORT)
+
+	in, connectionCb := CreateConnectionsQueue()
+	self.ConnectionsQueue = in
+
+	for {
+		select {
+		case node := <-listenCb:
+			fmt.Println("New connection from", node.TCPConn.RemoteAddr())
+		case node := <-connectionCb:
+			fmt.Println("Stablished connection to", node.TCPConn.RemoteAddr())
+		}
+	}
+}
+
+func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
+
+	in := make(ConnectionsQueue)
+	out := make(NodeChannel)
+
+	go func() {
+
+		for {
+			address := <-in
+
+			go ConnectToNode(address, false, out)
+		}
+	}()
+
+	return in, out
+}
+
+func StartListening(address string) NodeChannel {
+
+	cb := make(NodeChannel)
 	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", address, BLOCKCHAIN_PORT))
 	networkError(err)
 
@@ -32,7 +68,7 @@ func StartListening(address string) chan *BlockchainNode {
 			connection, err := l.AcceptTCP()
 			networkError(err)
 
-			cb <- &BlockchainNode{connection, int(time.Now().Unix())}
+			cb <- &Node{connection, int(time.Now().Unix())}
 		}
 
 	}(listener)
@@ -40,35 +76,29 @@ func StartListening(address string) chan *BlockchainNode {
 	return cb
 }
 
-func ConnectToNode(dst string, retry bool) chan *BlockchainNode {
-
-	cb := make(chan *BlockchainNode)
+func ConnectToNode(dst string, retry bool, cb NodeChannel) {
 
 	addrDst, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", dst, BLOCKCHAIN_PORT))
 	networkError(err)
 
-	go func() {
-		var con *net.TCPConn = nil
-		for {
+	var con *net.TCPConn = nil
+	for {
 
-			con, err = net.DialTCP("tcp", nil, addrDst)
-			networkError(err)
+		con, err = net.DialTCP("tcp", nil, addrDst)
+		networkError(err)
 
-			if !retry {
-				break
-			}
+		if con != nil {
 
-			if con != nil {
-				cb <- &BlockchainNode{con, int(time.Now().Unix())}
-				break
-			} else {
-				time.Sleep(5 * time.Second)
-			}
+			cb <- &Node{con, int(time.Now().Unix())}
+			break
+		} else {
+			time.Sleep(5 * time.Second)
 		}
 
-	}()
-
-	return cb
+		if !retry {
+			break
+		}
+	}
 }
 
 func GetIpAddress() []string {

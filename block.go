@@ -1,5 +1,6 @@
 package main
 
+type BlockSlice []Block
 type Block struct {
 	BlockHeader
 	BlockBody
