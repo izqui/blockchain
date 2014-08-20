@@ -9,7 +9,7 @@ import (
 func TestTransactionMarshalling(t *testing.T) {
 
 	kp := GenerateNewKeypair()
-	tr := NewTransaction(kp.Public, nil, []byte("Hola que tal"))
+	tr := NewTransaction(kp.Public, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
 
 	tr.Header.Nonce = tr.GenerateNonce(helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX))
 	tr.Signature = tr.Sign(kp)
@@ -37,7 +37,7 @@ func TestTransactionVerification(t *testing.T) {
 	pow := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX)
 
 	kp := GenerateNewKeypair()
-	tr := NewTransaction(kp.Public, nil, []byte("Hola que tal"))
+	tr := NewTransaction(kp.Public, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024))))
 
 	tr.Header.Nonce = tr.GenerateNonce(pow)
 	tr.Signature = tr.Sign(kp)
@@ -54,7 +54,7 @@ func TestIncorrectPOWVerification(t *testing.T) {
 	powIncorrect := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, 'a')
 
 	kp := GenerateNewKeypair()
-	tr := NewTransaction(kp.Public, nil, []byte("Hola que tal"))
+	tr := NewTransaction(kp.Public, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024))))
 	tr.Header.Nonce = tr.GenerateNonce(powIncorrect)
 	tr.Signature = tr.Sign(kp)
 
@@ -68,7 +68,7 @@ func TestIncorrectSignatureVerification(t *testing.T) {
 
 	pow := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX)
 	kp1, kp2 := GenerateNewKeypair(), GenerateNewKeypair()
-	tr := NewTransaction(kp2.Public, nil, []byte("Hola que tal"))
+	tr := NewTransaction(kp2.Public, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024))))
 	tr.Header.Nonce = tr.GenerateNonce(pow)
 	tr.Signature = tr.Sign(kp1)
 
