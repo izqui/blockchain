@@ -1,8 +1,6 @@
 package main
 
 import (
-	"reflect"
-
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -18,7 +16,7 @@ type Keypair struct {
 	Private []byte `json:"private"` // d (base58 encoded)
 }
 
-func randomKeyPair() Keypair {
+func GenerateNewKeypair() *Keypair {
 
 	pk, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
 
@@ -29,24 +27,6 @@ func randomKeyPair() Keypair {
 
 	kp := Keypair{Public: public, Private: private}
 
-	return kp
-}
-
-func GenerateNewKeypair(prefix byte, complexity int) *Keypair {
-
-	pr := helpers.ArrayOfBytes(complexity, prefix)
-
-	var kp Keypair
-
-	for {
-
-		kp = randomKeyPair()
-
-		//Proof of work
-		if complexity == 0 || reflect.DeepEqual(kp.Public[:complexity], pr) {
-			break
-		}
-	}
 	return &kp
 }
 

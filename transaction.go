@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"github.com/izqui/helpers"
+	"reflect"
 	"time"
 )
 
@@ -17,24 +20,48 @@ type Transaction struct {
 type TransactionHeader struct {
 	From          []byte
 	To            []byte
-	Timestamp     int
+	Timestamp     uint32
 	PayloadHash   []byte
-	PayloadLength int
+	PayloadLength uint32
+	Nonce         uint32
 }
 
 // Returns bytes to be sent to the network
 
-func (t Transaction) Sign(keypair Keypair) Transaction {
+func NewTransaction(from, to, payload []byte) Transaction {
 
-	newT := t
-	newT.Header.Timestamp = int(time.Now().Unix())
+	t := Transaction{Header: TransactionHeader{From: from, To: to}, Payload: payload}
+
+	t.Header.Timestamp = uint32(time.Now().Unix())
+	t.Header.PayloadHash = helpers.SHA256(t.Payload)
+	t.Header.PayloadLength = uint32(len(t.Payload))
+
+	return t
+}
+func (t Transaction) Sign(keypair Keypair) []byte {
 
 	headerBytes, _ := t.Header.MarshalBinary()
-	newT.Signature, _ = keypair.Sign(headerBytes)
-	return newT
+
+	s, _ := keypair.Sign(headerBytes)
+	return s
 }
 
-func (t *Transaction) MarshalBinary() ([]byte, error) {
+func (t Transaction) ProofOfWork(prefix []byte) uint32 {
+
+	newT := t
+	for {
+		header, _ := newT.Header.MarshalBinary()
+		if reflect.DeepEqual(prefix, helpers.SHA256(header)[:len(prefix)]) {
+			break
+		}
+
+		newT.Header.Nonce++
+	}
+
+	return newT.Header.Nonce
+}
+
+func (t Transaction) MarshalBinary() ([]byte, error) {
 
 	headerBytes, _ := t.Header.MarshalBinary()
 
@@ -45,15 +72,27 @@ func (t *Transaction) MarshalBinary() ([]byte, error) {
 	return append(append(headerBytes, helpers.FitBytesInto(t.Signature, NETWORK_KEY_SIZE)...), t.Payload...), nil
 }
 
-func (t *Transaction) UnmarshalBinary([]byte) {
+func (t Transaction) UnmarshalBinary(d []byte) {
 
+	buf := bytes.NewBuffer(d)
+	buf.ReadBytes(delim)
 }
 
 func (th TransactionHeader) MarshalBinary() ([]byte, error) {
 
-	return []byte{}, nil
+	buf := new(bytes.Buffer)
+
+	buf.Write(helpers.FitBytesInto(th.From, NETWORK_KEY_SIZE))
+	buf.Write(helpers.FitBytesInto(th.To, NETWORK_KEY_SIZE))
+	binary.Write(buf, binary.LittleEndian, th.Timestamp)
+	buf.Write(helpers.FitBytesInto(th.PayloadHash, 32))
+	binary.Write(buf, binary.LittleEndian, th.PayloadLength)
+	binary.Write(buf, binary.LittleEndian, th.Nonce)
+
+	return buf.Bytes(), nil
+
 }
 
-func (th TransactionHeader) UnmarshalBinary([]byte) {
+func (th TransactionHeader) UnmarshalBinary(d []byte) {
 
 }

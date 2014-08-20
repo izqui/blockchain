@@ -21,7 +21,7 @@ func main() {
 	if keypair == nil {
 
 		fmt.Println("Generating keypair...")
-		keypair = GenerateNewKeypair(POW_PREFIX, KEY_POW_COMPLEXITY)
+		keypair = GenerateNewKeypair()
 		WriteConfiguration(HOME_DIRECTORY_CONFIG, keypair)
 	}
 
