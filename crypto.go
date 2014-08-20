@@ -50,7 +50,7 @@ func (k *Keypair) Sign(data []byte) ([]byte, error) {
 	return base58.EncodeBig([]byte{}, bigJoin(KEY_SIZE, r, s)), nil
 }
 
-func Verify(publicKey []byte, sig, data []byte) bool {
+func SignatureVerify(publicKey []byte, sig, data []byte) bool {
 
 	hash := helpers.SHA256(data)
 

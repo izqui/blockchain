@@ -27,7 +27,7 @@ func TestKeySigning(t *testing.T) {
 
 			t.Error("base58 error")
 
-		} else if !Verify(keypair.Public, signature, data) {
+		} else if !SignatureVerify(keypair.Public, signature, data) {
 
 			t.Error("Signing and verifying error", len(keypair.Public))
 		}

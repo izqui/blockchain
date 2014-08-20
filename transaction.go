@@ -38,7 +38,7 @@ func NewTransaction(from, to, payload []byte) *Transaction {
 
 	return &t
 }
-func (t Transaction) Sign(keypair Keypair) []byte {
+func (t *Transaction) Sign(keypair Keypair) []byte {
 
 	headerBytes, _ := t.Header.MarshalBinary()
 
@@ -46,12 +46,24 @@ func (t Transaction) Sign(keypair Keypair) []byte {
 	return s
 }
 
-func (t Transaction) ProofOfWork(prefix []byte) uint32 {
+func (t *Transaction) VerifyTransaction(pow []byte) bool {
+
+	m, err := t.Header.MarshalBinary()
+	if err != nil {
+		return false
+	}
+	headerHash := helpers.SHA256(m)
+	payloadHash := helpers.SHA256(t.Payload)
+
+	return reflect.DeepEqual(payloadHash, t.Header.PayloadHash) && ProofOfWork(headerHash, pow) && SignatureVerify(t.Header.From, t.Signature, headerHash)
+}
+
+func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
 
 	newT := t
 	for {
 		header, _ := newT.Header.MarshalBinary()
-		if reflect.DeepEqual(prefix, helpers.SHA256(header)[:len(prefix)]) {
+		if ProofOfWork(prefix, helpers.SHA256(header)) {
 			break
 		}
 
@@ -59,6 +71,11 @@ func (t Transaction) ProofOfWork(prefix []byte) uint32 {
 	}
 
 	return newT.Header.Nonce
+}
+
+func ProofOfWork(prefix []byte, hash []byte) bool {
+
+	return reflect.DeepEqual(prefix, hash[:len(prefix)])
 }
 
 func (t *Transaction) MarshalBinary() ([]byte, error) {
