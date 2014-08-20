@@ -9,17 +9,16 @@ import (
 )
 
 var (
-
 	//flag
 	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
 
 	self = struct {
 		*Keypair
 		*Blockchain
-		NodeSlice
+		Nodes
 		ConnectionsQueue
-		Address *string
-	}{nil, nil, nil, nil, address}
+		Address string
+	}{}
 )
 
 func init() {
@@ -38,11 +37,11 @@ func main() {
 
 	self.Keypair = keypair
 
-	go RunBlockchainNetwork()
+	go RunBlockchainNetwork(*address, BLOCKCHAIN_PORT)
 
-	time.Sleep(time.Second)
 	self.ConnectionsQueue <- SEED_NODES[0]
-	time.Sleep(time.Second * 1000)
+	time.Sleep(time.Second)
+	fmt.Println(self.Nodes)
 
 }
 

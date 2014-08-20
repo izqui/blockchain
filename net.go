@@ -15,23 +15,38 @@ type Node struct {
 	lastSeen int
 }
 
-type NodeSlice []*Node
+type Nodes map[string]*Node
 
-func RunBlockchainNetwork() {
+func (n Nodes) AddNode(node *Node) bool {
 
-	listenCb := StartListening(*self.Address)
+	key := node.TCPConn.RemoteAddr().String()
 
-	fmt.Println("Listening in", *self.Address, BLOCKCHAIN_PORT)
+	if key != self.Address && n[key] == nil {
+
+		n[key] = node
+		return true
+	}
+	return false
+}
+
+func RunBlockchainNetwork(address, port string) {
 
 	in, connectionCb := CreateConnectionsQueue()
 	self.ConnectionsQueue = in
+	self.Nodes = Nodes{}
+	self.Address = fmt.Sprintf("%s:%s", address, port)
+
+	fmt.Println("Listening in", self.Address)
+	listenCb := StartListening(self.Address)
 
 	for {
 		select {
 		case node := <-listenCb:
-			fmt.Println("New connection from", node.TCPConn.RemoteAddr())
+
+			self.Nodes.AddNode(node)
 		case node := <-connectionCb:
-			fmt.Println("Stablished connection to", node.TCPConn.RemoteAddr())
+
+			self.Nodes.AddNode(node)
 		}
 	}
 }
@@ -56,10 +71,10 @@ func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
 func StartListening(address string) NodeChannel {
 
 	cb := make(NodeChannel)
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", address, BLOCKCHAIN_PORT))
+	addr, err := net.ResolveTCPAddr("tcp4", address)
 	networkError(err)
 
-	listener, err := net.ListenTCP("tcp", addr)
+	listener, err := net.ListenTCP("tcp4", addr)
 	networkError(err)
 
 	go func(l *net.TCPListener) {
