@@ -18,8 +18,8 @@ type TransactionHeader struct {
 	From          []byte
 	To            []byte
 	Timestamp     int
-	PayloadLength int
 	PayloadHash   []byte
+	PayloadLength int
 }
 
 // Returns bytes to be sent to the network
