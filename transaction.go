@@ -28,7 +28,7 @@ type TransactionHeader struct {
 
 // Returns bytes to be sent to the network
 
-func NewTransaction(from, to, payload []byte) Transaction {
+func NewTransaction(from, to, payload []byte) *Transaction {
 
 	t := Transaction{Header: TransactionHeader{From: from, To: to}, Payload: payload}
 
@@ -36,7 +36,7 @@ func NewTransaction(from, to, payload []byte) Transaction {
 	t.Header.PayloadHash = helpers.SHA256(t.Payload)
 	t.Header.PayloadLength = uint32(len(t.Payload))
 
-	return t
+	return &t
 }
 func (t Transaction) Sign(keypair Keypair) []byte {
 
@@ -61,7 +61,7 @@ func (t Transaction) ProofOfWork(prefix []byte) uint32 {
 	return newT.Header.Nonce
 }
 
-func (t Transaction) MarshalBinary() ([]byte, error) {
+func (t *Transaction) MarshalBinary() ([]byte, error) {
 
 	headerBytes, _ := t.Header.MarshalBinary()
 
@@ -72,13 +72,32 @@ func (t Transaction) MarshalBinary() ([]byte, error) {
 	return append(append(headerBytes, helpers.FitBytesInto(t.Signature, NETWORK_KEY_SIZE)...), t.Payload...), nil
 }
 
-func (t Transaction) UnmarshalBinary(d []byte) {
+func (t *Transaction) UnmarshalBinary(d []byte) error {
 
 	buf := bytes.NewBuffer(d)
-	buf.ReadBytes(delim)
+
+	if len(d) < HEADER_SIZE+NETWORK_KEY_SIZE {
+		return errors.New("Insuficient bytes for unmarshalling transaction")
+	}
+
+	header := &TransactionHeader{}
+	if err := header.UnmarshalBinary(buf.Next(HEADER_SIZE)); err != nil {
+		return err
+	}
+
+	t.Header = *header
+	if len(d) != HEADER_SIZE+NETWORK_KEY_SIZE+int(t.Header.PayloadLength) {
+		return errors.New("Payload length in header doesn't match with actual payload length")
+	}
+
+	t.Signature = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
+	t.Payload = buf.Next(int(t.Header.PayloadLength))
+
+	return nil
+
 }
 
-func (th TransactionHeader) MarshalBinary() ([]byte, error) {
+func (th *TransactionHeader) MarshalBinary() ([]byte, error) {
 
 	buf := new(bytes.Buffer)
 
@@ -93,6 +112,15 @@ func (th TransactionHeader) MarshalBinary() ([]byte, error) {
 
 }
 
-func (th TransactionHeader) UnmarshalBinary(d []byte) {
+func (th *TransactionHeader) UnmarshalBinary(d []byte) error {
 
+	buf := bytes.NewBuffer(d)
+	th.From = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
+	th.To = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
+	binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.Timestamp)
+	th.PayloadHash = buf.Next(32)
+	binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.PayloadLength)
+	binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.Nonce)
+
+	return nil
 }

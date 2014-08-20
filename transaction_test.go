@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/izqui/helpers"
+	"reflect"
 	"testing"
 )
 
@@ -14,9 +14,21 @@ func TestTransactionMarshalling(t *testing.T) {
 	tr.Header.Nonce = tr.ProofOfWork(helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX))
 	tr.Signature = tr.Sign(*kp)
 
-	_, err := tr.MarshalBinary()
+	data, err := tr.MarshalBinary()
 
 	if err != nil {
 		t.Error(err)
 	}
+
+	newT := &Transaction{}
+	err = newT.UnmarshalBinary(data)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(*newT, *tr) {
+		t.Error("Marshall, unmarshall failed")
+	}
+
 }
