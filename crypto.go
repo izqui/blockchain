@@ -30,9 +30,8 @@ func GenerateNewKeypair() *Keypair {
 	return &kp
 }
 
-func (k *Keypair) Sign(data []byte) ([]byte, error) {
+func (k *Keypair) Sign(hash []byte) ([]byte, error) {
 
-	hash := helpers.SHA256(data)
 	d, err := base58.DecodeToBig(k.Private)
 	if err != nil {
 		return nil, err
@@ -50,9 +49,7 @@ func (k *Keypair) Sign(data []byte) ([]byte, error) {
 	return base58.EncodeBig([]byte{}, bigJoin(KEY_SIZE, r, s)), nil
 }
 
-func SignatureVerify(publicKey []byte, sig, data []byte) bool {
-
-	hash := helpers.SHA256(data)
+func SignatureVerify(publicKey, sig, hash []byte) bool {
 
 	b, _ := base58.DecodeToBig(publicKey)
 	publ := splitBig(b, 2)

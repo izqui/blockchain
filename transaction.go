@@ -27,7 +27,6 @@ type TransactionHeader struct {
 }
 
 // Returns bytes to be sent to the network
-
 func NewTransaction(from, to, payload []byte) *Transaction {
 
 	t := Transaction{Header: TransactionHeader{From: from, To: to}, Payload: payload}
@@ -38,11 +37,12 @@ func NewTransaction(from, to, payload []byte) *Transaction {
 
 	return &t
 }
-func (t *Transaction) Sign(keypair Keypair) []byte {
+func (t *Transaction) Sign(keypair *Keypair) []byte {
 
 	headerBytes, _ := t.Header.MarshalBinary()
 
-	s, _ := keypair.Sign(headerBytes)
+	s, _ := keypair.Sign(helpers.SHA256(headerBytes))
+
 	return s
 }
 
@@ -55,7 +55,7 @@ func (t *Transaction) VerifyTransaction(pow []byte) bool {
 	headerHash := helpers.SHA256(m)
 	payloadHash := helpers.SHA256(t.Payload)
 
-	return reflect.DeepEqual(payloadHash, t.Header.PayloadHash) && ProofOfWork(headerHash, pow) && SignatureVerify(t.Header.From, t.Signature, headerHash)
+	return reflect.DeepEqual(payloadHash, t.Header.PayloadHash) && CheckProofOfWork(pow, headerHash) && SignatureVerify(t.Header.From, t.Signature, headerHash)
 }
 
 func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
@@ -63,7 +63,7 @@ func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
 	newT := t
 	for {
 		header, _ := newT.Header.MarshalBinary()
-		if ProofOfWork(prefix, helpers.SHA256(header)) {
+		if CheckProofOfWork(prefix, helpers.SHA256(header)) {
 			break
 		}
 
@@ -73,9 +73,12 @@ func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
 	return newT.Header.Nonce
 }
 
-func ProofOfWork(prefix []byte, hash []byte) bool {
+func CheckProofOfWork(prefix []byte, hash []byte) bool {
 
-	return reflect.DeepEqual(prefix, hash[:len(prefix)])
+	if len(prefix) > 0 {
+		return reflect.DeepEqual(prefix, hash[:len(prefix)])
+	}
+	return true
 }
 
 func (t *Transaction) MarshalBinary() ([]byte, error) {

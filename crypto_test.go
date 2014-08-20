@@ -17,17 +17,19 @@ func TestKeyGeneration(t *testing.T) {
 
 func TestKeySigning(t *testing.T) {
 
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 5; i++ {
 		keypair := GenerateNewKeypair()
 
 		data := helpers.ArrayOfBytes(i, 'a')
-		signature, err := keypair.Sign(data)
+		hash := helpers.SHA256(data)
+
+		signature, err := keypair.Sign(hash)
 
 		if err != nil {
 
 			t.Error("base58 error")
 
-		} else if !SignatureVerify(keypair.Public, signature, data) {
+		} else if !SignatureVerify(keypair.Public, signature, hash) {
 
 			t.Error("Signing and verifying error", len(keypair.Public))
 		}
