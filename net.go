@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/izqui/helpers"
 )
 
 type ConnectionsQueue chan string
@@ -61,7 +63,7 @@ func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
 		for {
 			address := <-in
 
-			go ConnectToNode(address, false, out)
+			go ConnectToNode(address, 2*time.Second, false, out)
 		}
 	}()
 
@@ -91,28 +93,34 @@ func StartListening(address string) NodeChannel {
 	return cb
 }
 
-func ConnectToNode(dst string, retry bool, cb NodeChannel) {
+func ConnectToNode(dst string, timeout time.Duration, retry bool, cb NodeChannel) {
 
 	addrDst, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", dst, BLOCKCHAIN_PORT))
 	networkError(err)
 
 	var con *net.TCPConn = nil
+loop:
 	for {
+		breakChannel := make(chan bool)
+		go func() {
+			con, err = net.DialTCP("tcp", nil, addrDst)
 
-		con, err = net.DialTCP("tcp", nil, addrDst)
-		networkError(err)
+			if con != nil {
 
-		if con != nil {
+				cb <- &Node{con, int(time.Now().Unix())}
+				breakChannel <- true
+			}
+		}()
 
-			cb <- &Node{con, int(time.Now().Unix())}
-			break
-		} else {
-			time.Sleep(5 * time.Second)
+		select {
+		case <-helpers.Timeout(timeout):
+			if !retry {
+				break loop
+			}
+		case <-breakChannel:
+			break loop
 		}
 
-		if !retry {
-			break
-		}
 	}
 }
 

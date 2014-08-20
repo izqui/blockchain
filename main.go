@@ -39,10 +39,7 @@ func main() {
 
 	go RunBlockchainNetwork(*address, BLOCKCHAIN_PORT)
 
-	self.ConnectionsQueue <- SEED_NODES[0]
-	time.Sleep(time.Second)
-	fmt.Println(self.Nodes)
-
+	time.Sleep(1000 * time.Second)
 }
 
 func logOnError(err error) {
