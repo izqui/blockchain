@@ -38,8 +38,12 @@ func main() {
 	self.Keypair = keypair
 
 	go RunBlockchainNetwork(*address, BLOCKCHAIN_PORT)
+	time.Sleep(time.Second)
+	for _, n := range SEED_NODES {
+		self.ConnectionsQueue <- n
+	}
 
-	time.Sleep(1000 * time.Second)
+	time.Sleep(time.Hour)
 }
 
 func logOnError(err error) {

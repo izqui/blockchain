@@ -25,6 +25,7 @@ func (n Nodes) AddNode(node *Node) bool {
 
 	if key != self.Address && n[key] == nil {
 
+		fmt.Println("Node connected", key)
 		n[key] = node
 		return true
 	}
@@ -63,7 +64,12 @@ func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
 		for {
 			address := <-in
 
-			go ConnectToNode(address, 2*time.Second, false, out)
+			address = fmt.Sprintf("%s:%s", address, BLOCKCHAIN_PORT)
+
+			if address != self.Address && self.Nodes[address] == nil {
+
+				go ConnectToNode(address, 5*time.Second, false, out)
+			}
 		}
 	}()
 
@@ -95,7 +101,7 @@ func StartListening(address string) NodeChannel {
 
 func ConnectToNode(dst string, timeout time.Duration, retry bool, cb NodeChannel) {
 
-	addrDst, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("[%s]:%s", dst, BLOCKCHAIN_PORT))
+	addrDst, err := net.ResolveTCPAddr("tcp4", dst)
 	networkError(err)
 
 	var con *net.TCPConn = nil
@@ -103,6 +109,8 @@ loop:
 	for {
 		breakChannel := make(chan bool)
 		go func() {
+
+			fmt.Println("Attempting to connect to", dst)
 			con, err = net.DialTCP("tcp", nil, addrDst)
 
 			if con != nil {

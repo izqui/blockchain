@@ -9,7 +9,8 @@ type Block struct {
 type BlockHeader struct {
 	PrevBlock  []byte
 	MerkelRoot []byte
-	Timestamp  int
+	Timestamp  int32
+	Nonce      int32
 }
 
 type BlockBody struct {
