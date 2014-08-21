@@ -56,3 +56,14 @@ The blockchain runs on port `9191` and uses TCP to handle connections among peer
 * Signature (80 bytes): signed(sha256(header))
 * Payload data (Payload Length bytes): raw data
 
+##### Block
+
+* Header:
+	* Origin (80 bytes): Origin public key
+	* Timestamp (4 bytes): int32 UNIX timestamp
+	* Previous block (32 bytes): sha256(previous block header)
+	* Merkel Root (32 Bytes): sha256(transaction hashes)
+	* Nonce (4 bytes): int32 UNIX timestamp
+
+* Signature (80 bytes): signed(sha256(header))
+* Block transactions

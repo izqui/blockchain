@@ -6,7 +6,25 @@ import (
 	"testing"
 )
 
-func TestTransactionMarshalling(t *testing.T) {
+func TestMerkellHash(t *testing.T) {
+
+	tr1 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
+	tr2 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
+	tr3 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
+
+	b := new(Block)
+	b.TransactionSlice = &TransactionSlice{*tr1, *tr2, *tr3}
+
+	mt := b.GenerateMerkelRoot()
+	manual := helpers.SHA256(append(helpers.SHA256(append(tr1.Hash(), tr2.Hash()...)), tr3.Hash()...))
+
+	if !reflect.DeepEqual(mt, manual) {
+		t.Error("Merkel tree generation fails")
+	}
+}
+
+/*
+func TestBlockMarshalling(t *testing.T) {
 
 	kp := GenerateNewKeypair()
 	tr := NewTransaction(kp.Public, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
@@ -32,7 +50,7 @@ func TestTransactionMarshalling(t *testing.T) {
 	}
 }
 
-func TestTransactionVerification(t *testing.T) {
+func TestBlockVerification(t *testing.T) {
 
 	pow := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX)
 
@@ -48,7 +66,7 @@ func TestTransactionVerification(t *testing.T) {
 	}
 }
 
-func TestIncorrectTransactionPOWVerification(t *testing.T) {
+func TestIncorrectBlockPOWVerification(t *testing.T) {
 
 	pow := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX)
 	powIncorrect := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, 'a')
@@ -64,7 +82,7 @@ func TestIncorrectTransactionPOWVerification(t *testing.T) {
 	}
 }
 
-func TestIncorrectTransactionSignatureVerification(t *testing.T) {
+func TestIncorrectBlockSignatureVerification(t *testing.T) {
 
 	pow := helpers.ArrayOfBytes(TEST_TRANSACTION_POW_COMPLEXITY, TEST_POW_PREFIX)
 	kp1, kp2 := GenerateNewKeypair(), GenerateNewKeypair()
@@ -77,3 +95,4 @@ func TestIncorrectTransactionSignatureVerification(t *testing.T) {
 		t.Error("Passed validation with incorrect key")
 	}
 }
+*/

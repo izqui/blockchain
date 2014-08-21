@@ -41,3 +41,6 @@ func (bl *Blockchain) Run() {
 		}
 	}
 }
+
+func (bl *Blockchain) GenerateBlock() {
+}

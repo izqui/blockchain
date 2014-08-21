@@ -10,30 +10,6 @@ import (
 	"github.com/izqui/helpers"
 )
 
-type TransactionSlice []Transaction
-
-func (slice TransactionSlice) Exists(tr Transaction) bool {
-
-	for _, t := range slice {
-		if reflect.DeepEqual(t.Signature, tr.Signature) {
-			return true
-		}
-	}
-	return false
-}
-
-func (slice TransactionSlice) AddTransaction(t Transaction) TransactionSlice {
-
-	// Inserted sorted by timestamp
-	for i, tr := range slice {
-		if tr.Header.Timestamp >= t.Header.Timestamp {
-			return append(append(slice[:i], t), slice[i:]...)
-		}
-	}
-
-	return append(slice, t)
-}
-
 type Transaction struct {
 	Header    TransactionHeader
 	Signature []byte
@@ -60,22 +36,23 @@ func NewTransaction(from, to, payload []byte) *Transaction {
 
 	return &t
 }
-func (t *Transaction) Sign(keypair *Keypair) []byte {
+
+func (t *Transaction) Hash() []byte {
 
 	headerBytes, _ := t.Header.MarshalBinary()
+	return helpers.SHA256(headerBytes)
+}
 
-	s, _ := keypair.Sign(helpers.SHA256(headerBytes))
+func (t *Transaction) Sign(keypair *Keypair) []byte {
+
+	s, _ := keypair.Sign(t.Hash())
 
 	return s
 }
 
 func (t *Transaction) VerifyTransaction(pow []byte) bool {
 
-	m, err := t.Header.MarshalBinary()
-	if err != nil {
-		return false
-	}
-	headerHash := helpers.SHA256(m)
+	headerHash := t.Hash()
 	payloadHash := helpers.SHA256(t.Payload)
 
 	return reflect.DeepEqual(payloadHash, t.Header.PayloadHash) && CheckProofOfWork(pow, headerHash) && SignatureVerify(t.Header.From, t.Signature, headerHash)
@@ -85,8 +62,8 @@ func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
 
 	newT := t
 	for {
-		header, _ := newT.Header.MarshalBinary()
-		if CheckProofOfWork(prefix, helpers.SHA256(header)) {
+
+		if CheckProofOfWork(prefix, newT.Hash()) {
 			break
 		}
 
@@ -108,7 +85,7 @@ func (t *Transaction) MarshalBinary() ([]byte, error) {
 
 	headerBytes, _ := t.Header.MarshalBinary()
 
-	if len(headerBytes) != HEADER_SIZE {
+	if len(headerBytes) != TRANSACTION_HEADER_SIZE {
 		return nil, errors.New("Header marshalling error")
 	}
 
@@ -119,17 +96,17 @@ func (t *Transaction) UnmarshalBinary(d []byte) error {
 
 	buf := bytes.NewBuffer(d)
 
-	if len(d) < HEADER_SIZE+NETWORK_KEY_SIZE {
+	if len(d) < TRANSACTION_HEADER_SIZE+NETWORK_KEY_SIZE {
 		return errors.New("Insuficient bytes for unmarshalling transaction")
 	}
 
 	header := &TransactionHeader{}
-	if err := header.UnmarshalBinary(buf.Next(HEADER_SIZE)); err != nil {
+	if err := header.UnmarshalBinary(buf.Next(TRANSACTION_HEADER_SIZE)); err != nil {
 		return err
 	}
 
 	t.Header = *header
-	if len(d) != HEADER_SIZE+NETWORK_KEY_SIZE+int(t.Header.PayloadLength) {
+	if len(d) != TRANSACTION_HEADER_SIZE+NETWORK_KEY_SIZE+int(t.Header.PayloadLength) {
 		return errors.New("Payload length in header doesn't match with actual payload length")
 	}
 
@@ -165,5 +142,51 @@ func (th *TransactionHeader) UnmarshalBinary(d []byte) error {
 	binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.PayloadLength)
 	binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.Nonce)
 
+	return nil
+}
+
+type TransactionSlice []Transaction
+
+func (slice TransactionSlice) Exists(tr Transaction) bool {
+
+	for _, t := range slice {
+		if reflect.DeepEqual(t.Signature, tr.Signature) {
+			return true
+		}
+	}
+	return false
+}
+
+func (slice TransactionSlice) AddTransaction(t Transaction) TransactionSlice {
+
+	// Inserted sorted by timestamp
+	for i, tr := range slice {
+		if tr.Header.Timestamp >= t.Header.Timestamp {
+			return append(append(slice[:i], t), slice[i:]...)
+		}
+	}
+
+	return append(slice, t)
+}
+
+func (h *TransactionSlice) MarshalBinary() ([]byte, error) {
+
+	/*buf := new(bytes.Buffer)
+
+	binary.Write(buf, binary.LittleEndian, th.Timestamp)
+	buf.Write(helpers.FitBytesInto(th.PayloadHash, 32))
+
+	return buf.Bytes(), nil*/
+
+	return nil, nil
+}
+
+func (h *TransactionSlice) UnmarshalBinary(d []byte) error {
+	/*
+		buf := bytes.NewBuffer(d)
+
+		binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.Timestamp)
+		th.PayloadHash = buf.Next(32)
+	*/
 	return nil
 }

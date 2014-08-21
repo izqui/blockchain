@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	//flag
+	//flags
 	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
 
 	self = struct {
