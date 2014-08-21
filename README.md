@@ -3,11 +3,7 @@ Having fun implementing a blockchain using Golang.
 
 Using [Minimum Viable Blockchain](https://artsec.hackpad.com/Blockchains-and-Bitcoins-mR2wlQ4KbVQ)
 
-## Protocol
-
-The blockchain runs on port `9191`.
-
-#### Keys
+## Keys
 
 The Blockchain uses ECDSA (224 bits) keys. 
 When a user first joins the blockchain a random key will be generated.
@@ -20,10 +16,32 @@ Given x, y as the components of the public key, the key is generated as followin
 	base58(BigInt(append(x as bytes, y as bytes)))
 ```
 
-#### Proof of work
+## Proof of work
 In order to sign a transaction and send it to the network, proof of work is required. 
 
 Proof of work is also required for block generation.
+
+## Protocol
+
+The blockchain runs on port `9191` and uses TCP to handle connections among peers.
+
+#### Message
+
+	* Message type (1 byte)
+		```
+		const (
+			MESSAGE_GET_NODES = iota + 20
+			MESSAGE_SEND_NODES
+
+			MESSAGE_GET_TRANSACTION
+			MESSAGE_SEND_TRANSACTION
+
+			MESSAGE_GET_BLOCK
+			MESSAGE_SEND_BLOCK
+		)
+		```
+	* Options (4 bytes): Data specific
+	* Data (n bytes): Data specific
 
 #### Transaction
 	
