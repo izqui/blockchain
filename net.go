@@ -32,26 +32,29 @@ func (n Nodes) AddNode(node *Node) bool {
 	return false
 }
 
-func RunBlockchainNetwork(address, port string) {
+func SetupNetwork(address, port string) ConnectionsQueue {
 
 	in, connectionCb := CreateConnectionsQueue()
-	self.ConnectionsQueue = in
 	self.Nodes = Nodes{}
 	self.Address = fmt.Sprintf("%s:%s", address, port)
 
 	fmt.Println("Listening in", self.Address)
 	listenCb := StartListening(self.Address)
 
-	for {
-		select {
-		case node := <-listenCb:
+	go func() {
+		for {
+			select {
+			case node := <-listenCb:
 
-			self.Nodes.AddNode(node)
-		case node := <-connectionCb:
+				self.Nodes.AddNode(node)
+			case node := <-connectionCb:
 
-			self.Nodes.AddNode(node)
+				self.Nodes.AddNode(node)
+			}
 		}
-	}
+	}()
+
+	return in
 }
 
 func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {

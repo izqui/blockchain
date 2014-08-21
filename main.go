@@ -1,17 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
-	_ "github.com/izqui/helpers"
 	"log"
-	"time"
+	"os"
+
+	"github.com/izqui/helpers"
 )
 
 var (
 	//flag
 	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
 
+	// TODO: Reduce to Keypair, Blockchain, Network [Issue: https://github.com/izqui/blockchain/issues/1]
 	self = struct {
 		*Keypair
 		*Blockchain
@@ -27,6 +30,7 @@ func init() {
 }
 func main() {
 
+	// Setup keys
 	keypair, _ := OpenConfiguration(HOME_DIRECTORY_CONFIG)
 	if keypair == nil {
 
@@ -34,18 +38,45 @@ func main() {
 		keypair = GenerateNewKeypair()
 		WriteConfiguration(HOME_DIRECTORY_CONFIG, keypair)
 	}
-
 	self.Keypair = keypair
 
-	go RunBlockchainNetwork(*address, BLOCKCHAIN_PORT)
-	time.Sleep(time.Second)
+	// Setup Network
+	self.ConnectionsQueue = SetupNetwork(*address, BLOCKCHAIN_PORT)
 	for _, n := range SEED_NODES {
 		self.ConnectionsQueue <- n
 	}
 
-	time.Sleep(time.Hour)
+	// Setup blockchain
+	self.Blockchain = SetupBlockchan()
+	go self.Blockchain.Run()
+
+	// Read Stdin to create transactions
+	stdin := ReadStdin()
+	for {
+		st := <-stdin
+
+		t := NewTransaction(keypair.Public, nil, []byte(st))
+		t.Header.Nonce = t.GenerateNonce(helpers.ArrayOfBytes(TRANSACTION_POW_COMPLEXITY, POW_PREFIX))
+		t.Signature = t.Sign(keypair)
+
+		self.Blockchain.TransactionsQueue <- t
+	}
 }
 
+func ReadStdin() chan string {
+
+	cb := make(chan string)
+	sc := bufio.NewScanner(os.Stdin)
+
+	go func() {
+		for sc.Scan() {
+			cb <- sc.Text()
+		}
+	}()
+
+	return cb
+
+}
 func logOnError(err error) {
 
 	if err != nil {

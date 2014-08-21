@@ -4,12 +4,35 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/izqui/helpers"
 	"reflect"
 	"time"
+
+	"github.com/izqui/helpers"
 )
 
 type TransactionSlice []Transaction
+
+func (slice TransactionSlice) Exists(tr Transaction) bool {
+
+	for _, t := range slice {
+		if reflect.DeepEqual(t.Signature, tr.Signature) {
+			return true
+		}
+	}
+	return false
+}
+
+func (slice TransactionSlice) AddTransaction(t Transaction) TransactionSlice {
+
+	// Inserted sorted by timestamp
+	for i, tr := range slice {
+		if tr.Header.Timestamp >= t.Header.Timestamp {
+			return append(append(slice[:i], t), slice[i:]...)
+		}
+	}
+
+	return append(slice, t)
+}
 
 type Transaction struct {
 	Header    TransactionHeader

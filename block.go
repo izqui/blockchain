@@ -2,8 +2,8 @@ package main
 
 type BlockSlice []Block
 type Block struct {
-	BlockHeader
-	BlockBody
+	*BlockHeader
+	*TransactionSlice
 }
 
 type BlockHeader struct {
@@ -13,6 +13,7 @@ type BlockHeader struct {
 	Nonce      int32
 }
 
-type BlockBody struct {
-	TransactionSlice
+func NewBlock() Block {
+
+	return Block{new(BlockHeader), new(TransactionSlice)}
 }
