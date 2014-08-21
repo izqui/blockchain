@@ -14,13 +14,10 @@ var (
 	//flag
 	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
 
-	// TODO: Reduce to Keypair, Blockchain, Network [Issue: https://github.com/izqui/blockchain/issues/1]
 	self = struct {
 		*Keypair
 		*Blockchain
-		Nodes
-		ConnectionsQueue
-		Address string
+		*Network
 	}{}
 )
 
@@ -41,9 +38,10 @@ func main() {
 	self.Keypair = keypair
 
 	// Setup Network
-	self.ConnectionsQueue = SetupNetwork(*address, BLOCKCHAIN_PORT)
+	self.Network = SetupNetwork(*address, BLOCKCHAIN_PORT)
+	go self.Network.Run()
 	for _, n := range SEED_NODES {
-		self.ConnectionsQueue <- n
+		self.Network.ConnectionsQueue <- n
 	}
 
 	// Setup blockchain

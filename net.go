@@ -19,6 +19,13 @@ type Node struct {
 
 type Nodes map[string]*Node
 
+type Network struct {
+	Nodes
+	ConnectionsQueue
+	Address            string
+	ConnectionCallback NodeChannel
+}
+
 func (n Nodes) AddNode(node *Node) bool {
 
 	key := node.TCPConn.RemoteAddr().String()
@@ -32,29 +39,33 @@ func (n Nodes) AddNode(node *Node) bool {
 	return false
 }
 
-func SetupNetwork(address, port string) ConnectionsQueue {
+func SetupNetwork(address, port string) *Network {
 
-	in, connectionCb := CreateConnectionsQueue()
-	self.Nodes = Nodes{}
-	self.Address = fmt.Sprintf("%s:%s", address, port)
+	n := new(Network)
+
+	n.ConnectionsQueue, n.ConnectionCallback = CreateConnectionsQueue()
+	n.Nodes = Nodes{}
+	n.Address = fmt.Sprintf("%s:%s", address, port)
+
+	return n
+}
+
+func (n *Network) Run() {
 
 	fmt.Println("Listening in", self.Address)
 	listenCb := StartListening(self.Address)
 
-	go func() {
-		for {
-			select {
-			case node := <-listenCb:
+	for {
+		select {
+		case node := <-listenCb:
 
-				self.Nodes.AddNode(node)
-			case node := <-connectionCb:
+			self.Nodes.AddNode(node)
+		case node := <-n.ConnectionCallback:
 
-				self.Nodes.AddNode(node)
-			}
+			self.Nodes.AddNode(node)
 		}
-	}()
+	}
 
-	return in
 }
 
 func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
