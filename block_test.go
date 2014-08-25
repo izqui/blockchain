@@ -11,12 +11,13 @@ func TestMerkellHash(t *testing.T) {
 	tr1 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
 	tr2 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
 	tr3 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
+	tr4 := NewTransaction(nil, nil, []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024))))
 
 	b := new(Block)
-	b.TransactionSlice = &TransactionSlice{*tr1, *tr2, *tr3}
+	b.TransactionSlice = &TransactionSlice{*tr1, *tr2, *tr3, *tr4}
 
 	mt := b.GenerateMerkelRoot()
-	manual := helpers.SHA256(append(helpers.SHA256(append(tr1.Hash(), tr2.Hash()...)), tr3.Hash()...))
+	manual := helpers.SHA256(append(helpers.SHA256(append(tr1.Hash(), tr2.Hash()...)), helpers.SHA256(append(tr3.Hash(), tr4.Hash()...))...))
 
 	if !reflect.DeepEqual(mt, manual) {
 		t.Error("Merkel tree generation fails")

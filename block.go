@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"reflect"
 
 	"github.com/izqui/functional"
@@ -99,16 +100,17 @@ func (b *Block) GenerateMerkelRoot() []byte {
 
 			bs := make([][]byte, l/2)
 			for i, _ := range bs {
-				i, j := i*2, (i*2)+1
-				bs[i] = helpers.SHA256(append(hashes[i], hashes[j]...))
+				j, k := i*2, (i*2)+1
+				bs[i] = helpers.SHA256(append(hashes[j], hashes[k]...))
 			}
 			return merkell(bs)
 		}
 	}
 
-	return merkell(functional.Map(func(t Transaction) []byte { return t.Hash() }, []Transaction(*b.TransactionSlice)).([][]byte))
+	ts := functional.Map(func(t Transaction) []byte { return t.Hash() }, []Transaction(*b.TransactionSlice)).([][]byte)
+	fmt.Println("merkeling", len(ts))
+	return merkell(ts)
 
-	return nil
 }
 func (b *Block) MarshalBinary() ([]byte, error) {
 
