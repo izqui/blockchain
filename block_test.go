@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/izqui/helpers"
 	"reflect"
 	"testing"
+
+	"github.com/izqui/helpers"
 )
 
 func TestMerkellHash(t *testing.T) {

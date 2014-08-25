@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"reflect"
 
 	"github.com/izqui/functional"
@@ -108,7 +107,6 @@ func (b *Block) GenerateMerkelRoot() []byte {
 	}
 
 	ts := functional.Map(func(t Transaction) []byte { return t.Hash() }, []Transaction(*b.TransactionSlice)).([][]byte)
-	fmt.Println("merkeling", len(ts))
 	return merkell(ts)
 
 }

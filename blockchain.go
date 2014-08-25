@@ -58,7 +58,6 @@ func (bl *Blockchain) Run() {
 				if tr.VerifyTransaction(TRANSACTION_POW) {
 
 					bl.CurrentBlock.AddTransaction(tr)
-					fmt.Println("new trans")
 
 					interruptBlockGen <- true
 				}
@@ -75,8 +74,17 @@ func (bl *Blockchain) Run() {
 
 						fmt.Println("New block!", b.TransactionSlice, b.VerifyBlock(BLOCK_POW))
 
+						transDiff := TransactionSlice{}
+
+						if reflect.DeepEqual(b.BlockHeader.MerkelRoot, bl.CurrentBlock.MerkelRoot) {
+							// Transactions are different
+							fmt.Println("Transactions are different. finding diff")
+							transDiff = DiffTransactionSlices(*bl.CurrentBlock.TransactionSlice, *b.TransactionSlice)
+						}
+
 						bl.AddBlock(b)
 						bl.CreateNewBlock()
+						bl.CurrentBlock.TransactionSlice = &transDiff
 
 						interruptBlockGen <- true
 
@@ -87,6 +95,26 @@ func (bl *Blockchain) Run() {
 
 		}
 	}
+}
+
+func DiffTransactionSlices(a, b TransactionSlice) (diff TransactionSlice) {
+	//Assumes transaction arrays are sorted (which maybe is too big of an assumption)
+	lastj := 0
+	for _, t := range a {
+		found := false
+		for j := lastj; j < len(b); j++ {
+			if reflect.DeepEqual(b[j].Signature, t.Signature) {
+				found = true
+				lastj = j
+				break
+			}
+		}
+		if !found {
+			diff = append(diff, t)
+		}
+	}
+
+	return
 }
 
 func (bl *Blockchain) GenerateBlocks() chan bool {
@@ -103,7 +131,7 @@ func (bl *Blockchain) GenerateBlocks() chan bool {
 
 		for true {
 
-			sleepTime := time.Microsecond
+			sleepTime := time.Nanosecond
 			if block.TransactionSlice.Len() > 0 {
 
 				if CheckProofOfWork(BLOCK_POW, block.Hash()) {
