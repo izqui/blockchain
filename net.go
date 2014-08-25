@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -25,6 +26,7 @@ type Network struct {
 	Address            string
 	ConnectionCallback NodeChannel
 	BroadcastQueue     chan Message
+	IncomingMessages   chan Message
 }
 
 func (n Nodes) AddNode(node *Node) bool {
@@ -36,6 +38,56 @@ func (n Nodes) AddNode(node *Node) bool {
 		fmt.Println("Node connected", key)
 		n[key] = node
 
+		go func() {
+			for {
+				var bs []byte = make([]byte, 1024*100)
+				n, err := node.TCPConn.Read(bs[0:])
+				networkError(err)
+
+				if err == io.EOF {
+					//TODO: Remove node [Issue: https://github.com/izqui/blockchain/issues/3]
+					node.TCPConn.Close()
+
+					break
+				}
+
+				m := new(Message)
+				err = m.UnmarshalBinary(bs[0:n])
+
+				if err != nil {
+					fmt.Println(err)
+					continue
+
+				} else {
+
+					m.Reply = make(chan Message)
+
+					go func(cb chan Message) {
+						for {
+							m, ok := <-cb
+
+							b, _ := m.MarshalBinary()
+							l := len(b)
+
+							i := 0
+							for i < l {
+								a, _ := node.TCPConn.Write(b[i:])
+								i += a
+							}
+
+							if !ok {
+								close(cb)
+								break
+							}
+						}
+
+					}(m.Reply)
+
+					self.Network.IncomingMessages <- *m
+				}
+			}
+		}()
+
 		return true
 	}
 	return false
@@ -45,8 +97,8 @@ func SetupNetwork(address, port string) *Network {
 
 	n := new(Network)
 
+	n.BroadcastQueue, n.IncomingMessages = make(chan Message), make(chan Message)
 	n.ConnectionsQueue, n.ConnectionCallback = CreateConnectionsQueue()
-	n.BroadcastQueue = make(chan Message)
 	n.Nodes = Nodes{}
 	n.Address = fmt.Sprintf("%s:%s", address, port)
 
@@ -68,6 +120,14 @@ func (n *Network) Run() {
 			self.Nodes.AddNode(node)
 		case message := <-n.BroadcastQueue:
 			go n.BroadcastMessage(message)
+
+		case message := <-n.IncomingMessages:
+			switch message.Identifier {
+			case MESSAGE_SEND_TRANSACTION:
+				t := new(Transaction)
+				t.UnmarshalBinary(message.Data)
+				self.Blockchain.TransactionsQueue <- t
+			}
 		}
 	}
 
@@ -155,12 +215,15 @@ func (n *Network) BroadcastMessage(message Message) {
 
 	b, _ := message.MarshalBinary()
 	l := len(b)
-	for _, n := range n.Nodes {
-		i := 0
-		for i < l {
-			a, _ := n.TCPConn.Write(b[i:])
-			i += a
-		}
+	for _, node := range n.Nodes {
+		fmt.Println("broadcast", node.TCPConn.RemoteAddr())
+		go func() {
+			i := 0
+			for i < l {
+				a, _ := node.TCPConn.Write(b[i:])
+				i += a
+			}
+		}()
 	}
 }
 
@@ -183,7 +246,7 @@ func GetIpAddress() []string {
 
 func networkError(err error) {
 
-	if err != nil {
+	if err != nil && err != io.EOF {
 
 		log.Println("Blockchain network: ", err)
 	}

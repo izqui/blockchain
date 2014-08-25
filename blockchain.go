@@ -65,7 +65,11 @@ func (bl *Blockchain) Run() {
 					mes.Data, _ = tr.MarshalBinary()
 
 					self.Network.BroadcastQueue <- *mes
+				} else {
+					fmt.Println("Recieved non valid transaction")
 				}
+			} else {
+				fmt.Println("Transaction already exists")
 			}
 		case b := <-bl.BlocksQueue:
 
@@ -81,7 +85,7 @@ func (bl *Blockchain) Run() {
 
 						transDiff := TransactionSlice{}
 
-						if reflect.DeepEqual(b.BlockHeader.MerkelRoot, bl.CurrentBlock.MerkelRoot) {
+						if !reflect.DeepEqual(b.BlockHeader.MerkelRoot, bl.CurrentBlock.MerkelRoot) {
 							// Transactions are different
 							fmt.Println("Transactions are different. finding diff")
 							transDiff = DiffTransactionSlices(*bl.CurrentBlock.TransactionSlice, *b.TransactionSlice)

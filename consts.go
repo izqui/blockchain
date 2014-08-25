@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const (
 	BLOCKCHAIN_PORT      = "9119"
 	MAX_NODE_CONNECTIONS = 400
@@ -15,8 +17,8 @@ const (
 	TRANSACTION_POW_COMPLEXITY      = 1
 	TEST_TRANSACTION_POW_COMPLEXITY = 1
 
-	BLOCK_POW_COMPLEXITY      = 3
-	TEST_BLOCK_POW_COMPLEXITY = 3
+	BLOCK_POW_COMPLEXITY      = 2
+	TEST_BLOCK_POW_COMPLEXITY = 2
 
 	KEY_SIZE = 28
 
@@ -38,8 +40,12 @@ const (
 	MESSAGE_SEND_BLOCK
 )
 
-var SEED_NODES = [...]string{
-	"10.0.5.33",
-	"172.17.0.5",
-	"172.17.0.6",
+func SEED_NODES() []string {
+	nodes := []string{"10.0.5.33"}
+
+	for i := 0; i < 100; i++ {
+		nodes = append(nodes, fmt.Sprintf("172.17.0.%d", i))
+	}
+
+	return nodes
 }

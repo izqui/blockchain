@@ -38,7 +38,7 @@ func main() {
 	// Setup Network
 	self.Network = SetupNetwork(*address, BLOCKCHAIN_PORT)
 	go self.Network.Run()
-	for _, n := range SEED_NODES {
+	for _, n := range SEED_NODES() {
 		self.Network.ConnectionsQueue <- n
 	}
 
