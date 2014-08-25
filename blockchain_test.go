@@ -13,9 +13,9 @@ func TestBlockDiff(t *testing.T) {
 	tr2 := Transaction{Signature: []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024)))}
 	tr3 := Transaction{Signature: []byte(helpers.RandomString(helpers.RandomInt(0, 1024*1024)))}
 
-	diff := DiffTransactionSlices(TransactionSlice{tr1, tr2, tr3}, TransactionSlice{tr2, tr3})
+	diff := DiffTransactionSlices(TransactionSlice{tr1, tr2, tr3}, TransactionSlice{tr1, tr3})
 
-	if len(diff) != 1 && !reflect.DeepEqual(diff[0].Signature, tr1.Signature) {
+	if len(diff) != 1 && !reflect.DeepEqual(diff[0].Signature, tr2.Signature) {
 
 		t.Error("Diffing algorithm fails")
 	}

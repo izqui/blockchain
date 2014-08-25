@@ -10,6 +10,13 @@ type Message struct {
 	Identifier byte
 	Options    []byte
 	Data       []byte
+
+	Reply chan Message
+}
+
+func NewMessage(id byte) *Message {
+
+	return &Message{Identifier: id}
 }
 
 func (m *Message) MarshalBinary() ([]byte, error) {

@@ -58,8 +58,13 @@ func (bl *Blockchain) Run() {
 				if tr.VerifyTransaction(TRANSACTION_POW) {
 
 					bl.CurrentBlock.AddTransaction(tr)
-
 					interruptBlockGen <- true
+
+					//Broadcast transaction to the network
+					mes := NewMessage(MESSAGE_SEND_TRANSACTION)
+					mes.Data, _ = tr.MarshalBinary()
+
+					self.Network.BroadcastQueue <- *mes
 				}
 			}
 		case b := <-bl.BlocksQueue:

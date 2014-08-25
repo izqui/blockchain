@@ -24,6 +24,7 @@ type Network struct {
 	ConnectionsQueue
 	Address            string
 	ConnectionCallback NodeChannel
+	BroadcastQueue     chan Message
 }
 
 func (n Nodes) AddNode(node *Node) bool {
@@ -34,6 +35,7 @@ func (n Nodes) AddNode(node *Node) bool {
 
 		fmt.Println("Node connected", key)
 		n[key] = node
+
 		return true
 	}
 	return false
@@ -44,6 +46,7 @@ func SetupNetwork(address, port string) *Network {
 	n := new(Network)
 
 	n.ConnectionsQueue, n.ConnectionCallback = CreateConnectionsQueue()
+	n.BroadcastQueue = make(chan Message)
 	n.Nodes = Nodes{}
 	n.Address = fmt.Sprintf("%s:%s", address, port)
 
@@ -63,6 +66,8 @@ func (n *Network) Run() {
 		case node := <-n.ConnectionCallback:
 
 			self.Nodes.AddNode(node)
+		case message := <-n.BroadcastQueue:
+			go n.BroadcastMessage(message)
 		}
 	}
 
@@ -143,6 +148,19 @@ loop:
 			break loop
 		}
 
+	}
+}
+
+func (n *Network) BroadcastMessage(message Message) {
+
+	b, _ := message.MarshalBinary()
+	l := len(b)
+	for _, n := range n.Nodes {
+		i := 0
+		for i < l {
+			a, _ := n.TCPConn.Write(b[i:])
+			i += a
+		}
 	}
 }
 
