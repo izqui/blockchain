@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/izqui/helpers"
 )
 
 var (
@@ -54,7 +52,7 @@ func main() {
 		st := <-stdin
 
 		t := NewTransaction(keypair.Public, nil, []byte(st))
-		t.Header.Nonce = t.GenerateNonce(helpers.ArrayOfBytes(TRANSACTION_POW_COMPLEXITY, POW_PREFIX))
+		t.Header.Nonce = t.GenerateNonce(TRANSACTION_POW)
 		t.Signature = t.Sign(keypair)
 
 		self.Blockchain.TransactionsQueue <- t

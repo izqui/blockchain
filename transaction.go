@@ -73,14 +73,6 @@ func (t *Transaction) GenerateNonce(prefix []byte) uint32 {
 	return newT.Header.Nonce
 }
 
-func CheckProofOfWork(prefix []byte, hash []byte) bool {
-
-	if len(prefix) > 0 {
-		return reflect.DeepEqual(prefix, hash[:len(prefix)])
-	}
-	return true
-}
-
 func (t *Transaction) MarshalBinary() ([]byte, error) {
 
 	headerBytes, _ := t.Header.MarshalBinary()
@@ -146,6 +138,11 @@ func (th *TransactionHeader) UnmarshalBinary(d []byte) error {
 }
 
 type TransactionSlice []Transaction
+
+func (slice TransactionSlice) Len() int {
+
+	return len(slice)
+}
 
 func (slice TransactionSlice) Exists(tr Transaction) bool {
 
