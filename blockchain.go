@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/izqui/helpers"
@@ -64,15 +65,26 @@ func (bl *Blockchain) Run() {
 			}
 		case b := <-bl.BlocksQueue:
 
-			//verify block
-			//Broadcast block and shit
+			if !bl.BlockSlice.Exists(b) {
+				if b.VerifyBlock(BLOCK_POW) {
 
-			fmt.Println("New block!", b.TransactionSlice, b.VerifyBlock(BLOCK_POW))
+					if reflect.DeepEqual(b.PrevBlock, bl.CurrentBlock.Hash()) {
+						// I'm missing some blocks in the middle. Request'em.
+						fmt.Println("Missing blocks in between")
+					} else {
 
-			bl.AddBlock(b)
-			bl.CreateNewBlock()
+						fmt.Println("New block!", b.TransactionSlice, b.VerifyBlock(BLOCK_POW))
 
-			interruptBlockGen <- true
+						bl.AddBlock(b)
+						bl.CreateNewBlock()
+
+						interruptBlockGen <- true
+
+						//Broadcast block and shit
+					}
+				}
+			}
+
 		}
 	}
 }

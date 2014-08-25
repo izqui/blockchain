@@ -11,6 +11,21 @@ import (
 
 type BlockSlice []Block
 
+func (bs BlockSlice) Exists(b Block) bool {
+
+	//Traverse array in reverse order because if a block exists is more likely to be on top.
+	l := len(bs)
+	for i := l - 1; i >= 0; i-- {
+
+		bb := bs[i]
+		if reflect.DeepEqual(b.Signature, bb.Signature) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (bs BlockSlice) PreviousBlock() *Block {
 	l := len(bs)
 	if l == 0 {
