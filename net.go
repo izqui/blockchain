@@ -33,7 +33,7 @@ func (n Nodes) AddNode(node *Node) bool {
 
 	key := node.TCPConn.RemoteAddr().String()
 
-	if key != self.Address && n[key] == nil {
+	if key != self.Network.Address && n[key] == nil {
 
 		fmt.Println("Node connected", key)
 		n[key] = node
@@ -145,7 +145,7 @@ func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
 
 			address = fmt.Sprintf("%s:%s", address, BLOCKCHAIN_PORT)
 
-			if address != self.Address && self.Nodes[address] == nil {
+			if address != self.Network.Address && self.Nodes[address] == nil {
 
 				go ConnectToNode(address, 5*time.Second, false, out)
 			}
