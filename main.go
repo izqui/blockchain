@@ -49,12 +49,30 @@ func main() {
 	// Read Stdin to create transactions
 	stdin := ReadStdin()
 	for {
-		st := <-stdin
+		select {
+		case str := <-stdin:
+			self.Blockchain.TransactionsQueue <- CreateTransaction(str)
+		case msg := <-self.Network.IncomingMessages:
+			HandleIncomingMessage(msg)
+		}
+	}
+}
 
-		t := NewTransaction(keypair.Public, nil, []byte(st))
-		t.Header.Nonce = t.GenerateNonce(TRANSACTION_POW)
-		t.Signature = t.Sign(keypair)
+func CreateTransaction(txt string) *Transaction {
 
+	t := NewTransaction(self.Keypair.Public, nil, []byte(txt))
+	t.Header.Nonce = t.GenerateNonce(TRANSACTION_POW)
+	t.Signature = t.Sign(self.Keypair)
+
+	return t
+}
+
+func HandleIncomingMessage(msg Message) {
+
+	switch msg.Identifier {
+	case MESSAGE_SEND_TRANSACTION:
+		t := new(Transaction)
+		t.UnmarshalBinary(msg.Data)
 		self.Blockchain.TransactionsQueue <- t
 	}
 }

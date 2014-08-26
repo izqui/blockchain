@@ -14,6 +14,7 @@ type BlocksQueue chan Block
 type Blockchain struct {
 	CurrentBlock Block
 	BlockSlice
+
 	TransactionsQueue
 	BlocksQueue
 }
@@ -54,23 +55,25 @@ func (bl *Blockchain) Run() {
 	for {
 		select {
 		case tr := <-bl.TransactionsQueue:
-			if !bl.CurrentBlock.TransactionSlice.Exists(*tr) {
-				if tr.VerifyTransaction(TRANSACTION_POW) {
 
-					bl.CurrentBlock.AddTransaction(tr)
-					interruptBlockGen <- true
-
-					//Broadcast transaction to the network
-					mes := NewMessage(MESSAGE_SEND_TRANSACTION)
-					mes.Data, _ = tr.MarshalBinary()
-
-					self.Network.BroadcastQueue <- *mes
-				} else {
-					fmt.Println("Recieved non valid transaction")
-				}
-			} else {
+			if bl.CurrentBlock.TransactionSlice.Exists(*tr) {
 				fmt.Println("Transaction already exists")
+				continue
 			}
+			if !tr.VerifyTransaction(TRANSACTION_POW) {
+				fmt.Println("Recieved non valid transaction")
+				continue
+			}
+
+			bl.CurrentBlock.AddTransaction(tr)
+			interruptBlockGen <- bl.CurrentBlock
+
+			//Broadcast transaction to the network
+			mes := NewMessage(MESSAGE_SEND_TRANSACTION)
+			mes.Data, _ = tr.MarshalBinary()
+
+			self.Network.BroadcastQueue <- *mes
+
 		case b := <-bl.BlocksQueue:
 
 			if !bl.BlockSlice.Exists(b) {
@@ -95,13 +98,12 @@ func (bl *Blockchain) Run() {
 						bl.CreateNewBlock()
 						bl.CurrentBlock.TransactionSlice = &transDiff
 
-						interruptBlockGen <- true
+						interruptBlockGen <- bl.CurrentBlock
 
 						//Broadcast block and shit
 					}
 				}
 			}
-
 		}
 	}
 }
@@ -126,14 +128,15 @@ func DiffTransactionSlices(a, b TransactionSlice) (diff TransactionSlice) {
 	return
 }
 
-func (bl *Blockchain) GenerateBlocks() chan bool {
+func (bl *Blockchain) GenerateBlocks() chan Block {
 
-	interrupt := make(chan bool)
+	interrupt := make(chan Block)
 
 	go func() {
 
+		block := <-interrupt
 	loop:
-		block := bl.CurrentBlock
+
 		block.BlockHeader.MerkelRoot = block.GenerateMerkelRoot()
 		block.BlockHeader.Nonce = 0
 		block.BlockHeader.Timestamp = uint32(time.Now().Unix())
@@ -160,7 +163,7 @@ func (bl *Blockchain) GenerateBlocks() chan bool {
 			}
 
 			select {
-			case <-interrupt:
+			case block = <-interrupt:
 				goto loop
 			case <-helpers.Timeout(sleepTime):
 				continue

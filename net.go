@@ -113,24 +113,15 @@ func (n *Network) Run() {
 	for {
 		select {
 		case node := <-listenCb:
-
 			self.Nodes.AddNode(node)
+
 		case node := <-n.ConnectionCallback:
-
 			self.Nodes.AddNode(node)
+
 		case message := <-n.BroadcastQueue:
 			go n.BroadcastMessage(message)
-
-		case message := <-n.IncomingMessages:
-			switch message.Identifier {
-			case MESSAGE_SEND_TRANSACTION:
-				t := new(Transaction)
-				t.UnmarshalBinary(message.Data)
-				self.Blockchain.TransactionsQueue <- t
-			}
 		}
 	}
-
 }
 
 func CreateConnectionsQueue() (ConnectionsQueue, NodeChannel) {
