@@ -83,6 +83,7 @@ func HandleNode(node *Node) {
 
 				i := 0
 				for i < l {
+
 					a, _ := node.TCPConn.Write(b[i:])
 					i += a
 				}
@@ -216,6 +217,7 @@ func (n *Network) BroadcastMessage(message Message) {
 					fmt.Println("Error bcing to", node.TCPConn.RemoteAddr())
 					break
 				}
+
 				i += a
 			}
 		}()

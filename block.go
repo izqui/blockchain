@@ -129,17 +129,22 @@ func (b *Block) UnmarshalBinary(d []byte) error {
 
 	buf := bytes.NewBuffer(d)
 
-	err := b.BlockHeader.UnmarshalBinary(buf.Next(BLOCK_HEADER_SIZE))
+	header := new(BlockHeader)
+	err := header.UnmarshalBinary(buf.Next(BLOCK_HEADER_SIZE))
 	if err != nil {
 		return err
 	}
 
-	b.Signature = buf.Next(NETWORK_KEY_SIZE)
+	b.BlockHeader = header
+	b.Signature = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
 
-	err = b.TransactionSlice.UnmarshalBinary(buf.Next(helpers.MaxInt))
+	ts := new(TransactionSlice)
+	err = ts.UnmarshalBinary(buf.Next(helpers.MaxInt))
 	if err != nil {
 		return err
 	}
+
+	b.TransactionSlice = ts
 
 	return nil
 }

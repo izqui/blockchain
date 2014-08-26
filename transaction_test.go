@@ -21,13 +21,13 @@ func TestTransactionMarshalling(t *testing.T) {
 	}
 
 	newT := &Transaction{}
-	err = newT.UnmarshalBinary(data)
+	rem, err := newT.UnmarshalBinary(data)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if !reflect.DeepEqual(*newT, *tr) {
+	if !reflect.DeepEqual(*newT, *tr) || len(rem) < 0 {
 		t.Error("Marshall, unmarshall failed")
 	}
 }

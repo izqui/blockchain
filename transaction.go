@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	_ "fmt"
 	"reflect"
 	"time"
 
@@ -85,17 +84,17 @@ func (t *Transaction) MarshalBinary() ([]byte, error) {
 	return append(append(headerBytes, helpers.FitBytesInto(t.Signature, NETWORK_KEY_SIZE)...), t.Payload...), nil
 }
 
-func (t *Transaction) UnmarshalBinary(d []byte) error {
+func (t *Transaction) UnmarshalBinary(d []byte) ([]byte, error) {
 
 	buf := bytes.NewBuffer(d)
 
 	if len(d) < TRANSACTION_HEADER_SIZE+NETWORK_KEY_SIZE {
-		return errors.New("Insuficient bytes for unmarshalling transaction")
+		return nil, errors.New("Insuficient bytes for unmarshalling transaction")
 	}
 
 	header := &TransactionHeader{}
 	if err := header.UnmarshalBinary(buf.Next(TRANSACTION_HEADER_SIZE)); err != nil {
-		return err
+		return nil, err
 	}
 
 	t.Header = *header
@@ -103,7 +102,7 @@ func (t *Transaction) UnmarshalBinary(d []byte) error {
 	t.Signature = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
 	t.Payload = buf.Next(int(t.Header.PayloadLength))
 
-	return nil
+	return buf.Next(helpers.MaxInt), nil
 
 }
 
@@ -164,24 +163,37 @@ func (slice TransactionSlice) AddTransaction(t Transaction) TransactionSlice {
 	return append(slice, t)
 }
 
-func (h *TransactionSlice) MarshalBinary() ([]byte, error) {
+func (slice *TransactionSlice) MarshalBinary() ([]byte, error) {
 
-	/*buf := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 
-	binary.Write(buf, binary.LittleEndian, th.Timestamp)
-	buf.Write(helpers.FitBytesInto(th.PayloadHash, 32))
+	for _, t := range *slice {
 
-	return buf.Bytes(), nil*/
+		bs, err := t.MarshalBinary()
 
-	return nil, nil
+		if err != nil {
+			return nil, err
+		}
+
+		buf.Write(bs)
+	}
+
+	return buf.Bytes(), nil
 }
 
-func (h *TransactionSlice) UnmarshalBinary(d []byte) error {
-	/*
-		buf := bytes.NewBuffer(d)
+func (slice *TransactionSlice) UnmarshalBinary(d []byte) error {
 
-		binary.Read(bytes.NewBuffer(buf.Next(4)), binary.LittleEndian, &th.Timestamp)
-		th.PayloadHash = buf.Next(32)
-	*/
+	remaining := d
+
+	for len(remaining) > TRANSACTION_HEADER_SIZE+NETWORK_KEY_SIZE {
+		t := new(Transaction)
+		rem, err := t.UnmarshalBinary(remaining)
+
+		if err != nil {
+			return err
+		}
+		(*slice) = append((*slice), *t)
+		remaining = rem
+	}
 	return nil
 }

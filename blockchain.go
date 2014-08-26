@@ -26,12 +26,12 @@ func SetupBlockchan() *Blockchain {
 
 	//Read blockchain from file and stuff...
 
-	bl.CreateNewBlock()
+	bl.CurrentBlock = bl.CreateNewBlock()
 
 	return bl
 }
 
-func (bl *Blockchain) CreateNewBlock() {
+func (bl *Blockchain) CreateNewBlock() Block {
 
 	prevBlock := bl.BlockSlice.PreviousBlock()
 	prevBlockHash := []byte{}
@@ -40,8 +40,10 @@ func (bl *Blockchain) CreateNewBlock() {
 		prevBlockHash = prevBlock.Hash()
 	}
 
-	bl.CurrentBlock = NewBlock(prevBlockHash)
-	bl.CurrentBlock.BlockHeader.Origin = self.Keypair.Public
+	b := NewBlock(prevBlockHash)
+	b.BlockHeader.Origin = self.Keypair.Public
+
+	return b
 }
 
 func (bl *Blockchain) AddBlock(b Block) {
@@ -75,33 +77,41 @@ func (bl *Blockchain) Run() {
 
 		case b := <-bl.BlocksQueue:
 
-			if !bl.BlockSlice.Exists(b) {
-				if b.VerifyBlock(BLOCK_POW) {
+			if bl.BlockSlice.Exists(b) {
+				continue
+			}
 
-					if reflect.DeepEqual(b.PrevBlock, bl.CurrentBlock.Hash()) {
-						// I'm missing some blocks in the middle. Request'em.
-						fmt.Println("Missing blocks in between")
-					} else {
+			if !b.VerifyBlock(BLOCK_POW) {
+				continue
+			}
 
-						fmt.Println("New block!", b.TransactionSlice, b.VerifyBlock(BLOCK_POW))
+			if reflect.DeepEqual(b.PrevBlock, bl.CurrentBlock.Hash()) {
+				// I'm missing some blocks in the middle. Request'em.
+				fmt.Println("Missing blocks in between")
+			} else {
 
-						transDiff := TransactionSlice{}
+				fmt.Println("New block!", b.Hash())
 
-						if !reflect.DeepEqual(b.BlockHeader.MerkelRoot, bl.CurrentBlock.MerkelRoot) {
-							// Transactions are different
-							fmt.Println("Transactions are different. finding diff")
-							transDiff = DiffTransactionSlices(*bl.CurrentBlock.TransactionSlice, *b.TransactionSlice)
-						}
+				transDiff := TransactionSlice{}
 
-						bl.AddBlock(b)
-						bl.CreateNewBlock()
-						bl.CurrentBlock.TransactionSlice = &transDiff
-
-						interruptBlockGen <- bl.CurrentBlock
-
-						//Broadcast block and shit
-					}
+				if !reflect.DeepEqual(b.BlockHeader.MerkelRoot, bl.CurrentBlock.MerkelRoot) {
+					// Transactions are different
+					fmt.Println("Transactions are different. finding diff")
+					transDiff = DiffTransactionSlices(*bl.CurrentBlock.TransactionSlice, *b.TransactionSlice)
 				}
+
+				bl.AddBlock(b)
+
+				//Broadcast block and shit
+				mes := NewMessage(MESSAGE_SEND_BLOCK)
+				mes.Data, _ = b.MarshalBinary()
+				self.Network.BroadcastQueue <- *mes
+
+				//New Block
+				bl.CurrentBlock = bl.CreateNewBlock()
+				bl.CurrentBlock.TransactionSlice = &transDiff
+
+				interruptBlockGen <- bl.CurrentBlock
 			}
 		}
 	}
