@@ -57,11 +57,10 @@ func (bl *Blockchain) Run() {
 		case tr := <-bl.TransactionsQueue:
 
 			if bl.CurrentBlock.TransactionSlice.Exists(*tr) {
-				fmt.Println("Transaction already exists")
 				continue
 			}
 			if !tr.VerifyTransaction(TRANSACTION_POW) {
-				fmt.Println("Recieved non valid transaction")
+				fmt.Println("Recieved non valid transaction", tr)
 				continue
 			}
 
@@ -136,7 +135,7 @@ func (bl *Blockchain) GenerateBlocks() chan Block {
 
 		block := <-interrupt
 	loop:
-
+		fmt.Println("Starting Proof of Work...")
 		block.BlockHeader.MerkelRoot = block.GenerateMerkelRoot()
 		block.BlockHeader.Nonce = 0
 		block.BlockHeader.Timestamp = uint32(time.Now().Unix())
@@ -155,7 +154,6 @@ func (bl *Blockchain) GenerateBlocks() chan Block {
 				} else {
 
 					block.BlockHeader.Nonce += 1
-					fmt.Println(block.BlockHeader.Nonce)
 				}
 
 			} else {

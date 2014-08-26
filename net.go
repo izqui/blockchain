@@ -48,11 +48,12 @@ func (n Nodes) AddNode(node *Node) bool {
 func HandleNode(node *Node) {
 
 	for {
-		var bs []byte = make([]byte, 1024*100)
+		var bs []byte = make([]byte, 1024*10)
 		n, err := node.TCPConn.Read(bs[0:])
 		networkError(err)
 
 		if err == io.EOF {
+			fmt.Println("EOF")
 			//TODO: Remove node [Issue: https://github.com/izqui/blockchain/issues/3]
 			node.TCPConn.Close()
 			break
@@ -180,7 +181,6 @@ loop:
 		breakChannel := make(chan bool)
 		go func() {
 
-			fmt.Println("Attempting to connect to", dst)
 			con, err = net.DialTCP("tcp", nil, addrDst)
 
 			if con != nil {
@@ -207,11 +207,15 @@ func (n *Network) BroadcastMessage(message Message) {
 	b, _ := message.MarshalBinary()
 	l := len(b)
 	for _, node := range n.Nodes {
-		fmt.Println("broadcast", node.TCPConn.RemoteAddr())
+		fmt.Println("Broadcasting...", node.TCPConn.RemoteAddr())
 		go func() {
 			i := 0
 			for i < l {
-				a, _ := node.TCPConn.Write(b[i:])
+				a, err := node.TCPConn.Write(b[i:])
+				if err != nil {
+					fmt.Println("Error bcing to", node.TCPConn.RemoteAddr())
+					break
+				}
 				i += a
 			}
 		}()

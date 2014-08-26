@@ -72,8 +72,13 @@ func HandleIncomingMessage(msg Message) {
 	switch msg.Identifier {
 	case MESSAGE_SEND_TRANSACTION:
 		t := new(Transaction)
-		t.UnmarshalBinary(msg.Data)
+		err := t.UnmarshalBinary(msg.Data)
+		if err != nil {
+			networkError(err)
+			break
+		}
 		self.Blockchain.TransactionsQueue <- t
+
 	}
 }
 

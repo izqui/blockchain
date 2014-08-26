@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	_ "fmt"
 	"reflect"
 	"time"
 
@@ -98,9 +99,6 @@ func (t *Transaction) UnmarshalBinary(d []byte) error {
 	}
 
 	t.Header = *header
-	if len(d) != TRANSACTION_HEADER_SIZE+NETWORK_KEY_SIZE+int(t.Header.PayloadLength) {
-		return errors.New("Payload length in header doesn't match with actual payload length")
-	}
 
 	t.Signature = helpers.StripByte(buf.Next(NETWORK_KEY_SIZE), 0)
 	t.Payload = buf.Next(int(t.Header.PayloadLength))
