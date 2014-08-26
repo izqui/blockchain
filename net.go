@@ -38,59 +38,59 @@ func (n Nodes) AddNode(node *Node) bool {
 		fmt.Println("Node connected", key)
 		n[key] = node
 
-		go func() {
-			for {
-				var bs []byte = make([]byte, 1024*100)
-				n, err := node.TCPConn.Read(bs[0:])
-				networkError(err)
-
-				if err == io.EOF {
-					//TODO: Remove node [Issue: https://github.com/izqui/blockchain/issues/3]
-					node.TCPConn.Close()
-
-					break
-				}
-
-				m := new(Message)
-				err = m.UnmarshalBinary(bs[0:n])
-
-				if err != nil {
-					fmt.Println(err)
-					continue
-
-				} else {
-
-					m.Reply = make(chan Message)
-
-					go func(cb chan Message) {
-						for {
-							m, ok := <-cb
-
-							b, _ := m.MarshalBinary()
-							l := len(b)
-
-							i := 0
-							for i < l {
-								a, _ := node.TCPConn.Write(b[i:])
-								i += a
-							}
-
-							if !ok {
-								close(cb)
-								break
-							}
-						}
-
-					}(m.Reply)
-
-					self.Network.IncomingMessages <- *m
-				}
-			}
-		}()
+		go HandleNode(node)
 
 		return true
 	}
 	return false
+}
+
+func HandleNode(node *Node) {
+
+	for {
+		var bs []byte = make([]byte, 1024*100)
+		n, err := node.TCPConn.Read(bs[0:])
+		networkError(err)
+
+		if err == io.EOF {
+			//TODO: Remove node [Issue: https://github.com/izqui/blockchain/issues/3]
+			node.TCPConn.Close()
+			break
+		}
+
+		m := new(Message)
+		err = m.UnmarshalBinary(bs[0:n])
+
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		m.Reply = make(chan Message)
+
+		go func(cb chan Message) {
+			for {
+				m, ok := <-cb
+
+				if !ok {
+					close(cb)
+					break
+				}
+
+				b, _ := m.MarshalBinary()
+				l := len(b)
+
+				i := 0
+				for i < l {
+					a, _ := node.TCPConn.Write(b[i:])
+					i += a
+				}
+			}
+
+		}(m.Reply)
+
+		self.Network.IncomingMessages <- *m
+	}
 }
 
 func SetupNetwork(address, port string) *Network {
