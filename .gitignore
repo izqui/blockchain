@@ -1,3 +1,5 @@
+cli
+core
 blockchain
 # Created by http://www.gitignore.io
 
@@ -7,7 +9,7 @@ blockchain
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
