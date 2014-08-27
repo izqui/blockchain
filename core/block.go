@@ -80,6 +80,20 @@ func (b *Block) Hash() []byte {
 	return helpers.SHA256(headerHash)
 }
 
+func (b *Block) GenerateNonce(prefix []byte) uint32 {
+
+	newB := b
+	for {
+
+		if CheckProofOfWork(prefix, newB.Hash()) {
+			break
+		}
+
+		newB.BlockHeader.Nonce++
+	}
+
+	return newB.BlockHeader.Nonce
+}
 func (b *Block) GenerateMerkelRoot() []byte {
 
 	var merkell func(hashes [][]byte) []byte
