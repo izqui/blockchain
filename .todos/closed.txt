@@ -1,3 +1,4 @@
 
 
-[Todos] Closed issue #1
+[Todos] Closed issue #2
+[Todos] Closed issue #3
