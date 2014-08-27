@@ -48,7 +48,7 @@ func (n Nodes) AddNode(node *Node) bool {
 func HandleNode(node *Node) {
 
 	for {
-		var bs []byte = make([]byte, 1024*10)
+		var bs []byte = make([]byte, 1024*1000)
 		n, err := node.TCPConn.Read(bs[0:])
 		networkError(err)
 
@@ -102,7 +102,7 @@ func SetupNetwork(address, port string) *Network {
 	n.BroadcastQueue, n.IncomingMessages = make(chan Message), make(chan Message)
 	n.ConnectionsQueue, n.ConnectionCallback = CreateConnectionsQueue()
 	n.Nodes = Nodes{}
-	n.Address = fmt.Sprintf("%s:%s", address, port)
+	n.Address = address //fmt.Sprintf("%s:%s", address, port)
 
 	return n
 }
@@ -179,6 +179,7 @@ func ConnectToNode(dst string, timeout time.Duration, retry bool, cb NodeChannel
 	var con *net.TCPConn = nil
 loop:
 	for {
+
 		breakChannel := make(chan bool)
 		go func() {
 
@@ -206,19 +207,13 @@ loop:
 func (n *Network) BroadcastMessage(message Message) {
 
 	b, _ := message.MarshalBinary()
-	l := len(b)
-	for _, node := range n.Nodes {
-		fmt.Println("Broadcasting...", node.TCPConn.RemoteAddr())
-		go func() {
-			i := 0
-			for i < l {
-				a, err := node.TCPConn.Write(b[i:])
-				if err != nil {
-					fmt.Println("Error bcing to", node.TCPConn.RemoteAddr())
-					break
-				}
 
-				i += a
+	for k, node := range n.Nodes {
+		fmt.Println("Broadcasting...", k)
+		go func() {
+			_, err := node.TCPConn.Write(b)
+			if err != nil {
+				fmt.Println("Error bcing to", node.TCPConn.RemoteAddr())
 			}
 		}()
 	}

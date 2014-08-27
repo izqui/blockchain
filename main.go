@@ -10,7 +10,7 @@ import (
 
 var (
 	//flags
-	address = flag.String("ip", GetIpAddress()[0], "Public facing ip address")
+	address = flag.String("ip", fmt.Sprintf("%s:%s", GetIpAddress()[0], BLOCKCHAIN_PORT), "Public facing ip address")
 
 	self = struct {
 		*Keypair

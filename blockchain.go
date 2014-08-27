@@ -73,15 +73,18 @@ func (bl *Blockchain) Run() {
 			mes := NewMessage(MESSAGE_SEND_TRANSACTION)
 			mes.Data, _ = tr.MarshalBinary()
 
+			time.Sleep(300 * time.Millisecond)
 			self.Network.BroadcastQueue <- *mes
 
 		case b := <-bl.BlocksQueue:
 
 			if bl.BlockSlice.Exists(b) {
+				fmt.Println("block exists")
 				continue
 			}
 
 			if !b.VerifyBlock(BLOCK_POW) {
+				fmt.Println("block verification fails")
 				continue
 			}
 
@@ -160,6 +163,7 @@ func (bl *Blockchain) GenerateBlocks() chan Block {
 					block.Signature = block.Sign(self.Keypair)
 					bl.BlocksQueue <- block
 					sleepTime = time.Hour * 24
+					fmt.Println("Found Block!")
 
 				} else {
 
@@ -168,6 +172,7 @@ func (bl *Blockchain) GenerateBlocks() chan Block {
 
 			} else {
 				sleepTime = time.Hour * 24
+				fmt.Println("No trans sleep")
 			}
 
 			select {
