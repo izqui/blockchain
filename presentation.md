@@ -74,6 +74,12 @@ def proof_of_work(block, difficulty) {
 
 ---
 
+# Demo
+
+#### *[http://github.com/izqui/blockchain](http://github.com/izqui/blockchain)*
+
+---
+
 # **Properties** Decentralized
 
 * Every peer has to download **all** the data.
@@ -93,17 +99,33 @@ def proof_of_work(block, difficulty) {
 
 ---
 
-# Demo
-
----
-
-# Satashi's gamble
+# Satoshi's gamble
 
 * The cost of modifying a previously verified block must be **higher** than the benefit of verifying new blocks.
 
-* We can now have an  append-only, **signed** database that can be completitely **decentralized**.
+* We can now have an append-only, **signed** database that can be completitely **decentralized**.
 
 ---
+
+# What can you build on top?
+
+**Bitcoin** peer-controlled currency
+
+--- 
+# What can you build on top?
+
+**Bitcoin** peer-controlled currency
+**Namecoin** distributed DNS service
+
+--- 
+
+# What can you build on top?
+
+**Bitcoin** peer-controlled currency
+**Namecoin** distributed DNS service
+**Certcoin?** web-of-trust style certificate store
+
+--- 
 
 # What can you build on top?
 
@@ -111,3 +133,29 @@ def proof_of_work(block, difficulty) {
 **Namecoin** distributed DNS service
 **Certcoin?** web-of-trust style certificate store
 **Keycoin?** distribution of public keys for any identity
+
+--- 
+
+# What can you build on top?
+
+**Bitcoin** peer-controlled currency
+**Namecoin** distributed DNS service
+**Certcoin?** web-of-trust style certificate store
+**Keycoin?** distribution of public keys for any identity
+**voting systems** digital-suffrage
+**file sync** storj.io
+**timestamp services** btproof.com proofofexistence.com
+**git hosting** gitchain.org
+**compute power** https://www.ethereum.org
+---
+
+## Join us developing a basic blockchain in which you can **build stuff** and **experiment** on top.
+
+#### *[http://github.com/izqui/blockchain](http://github.com/izqui/blockchain)*
+
+---
+
+# Thanks!
+
+### @jedahan
+### @izqui9
