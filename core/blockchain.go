@@ -88,7 +88,7 @@ func (bl *Blockchain) Run() {
 				continue
 			}
 
-			if reflect.DeepEqual(b.PrevBlock, bl.CurrentBlock.Hash()) {
+			if !reflect.DeepEqual(b.PrevBlock, bl.CurrentBlock.PrevBlock) {
 				// I'm missing some blocks in the middle. Request'em.
 				fmt.Println("Missing blocks in between")
 			} else {
